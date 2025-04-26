@@ -91,7 +91,6 @@ default_params = {
     # (see below `finalize_and_sanitize`).
     "inplace_update_support": random.choice([0] * 9 + [1]),
     "expected_values_dir": lambda: setup_expected_values_dir(),
-    "fail_if_options_file_error": lambda: random.randint(0, 1),
     "flush_one_in": lambda: random.choice([1000, 1000000]),
     "manual_wal_flush_one_in": lambda: random.choice([0, 1000]),
     "file_checksum_impl": lambda: random.choice(["none", "crc32c", "xxh64", "big"]),
@@ -345,6 +344,8 @@ default_params = {
     "allow_unprepared_value": lambda: random.choice([0, 1]),
     "enable_remote_compaction": lambda: random.choice([0, 1]),
     "auto_refresh_iterator_with_snapshot": lambda: random.choice([0, 1]),
+    "memtable_op_scan_flush_trigger": lambda: random.choice([0, 10, 100, 1000]),
+    "ingest_wbwi_one_in": lambda: random.choice([0, 0, 100, 500]),
 }
 _TEST_DIR_ENV_VAR = "TEST_TMPDIR"
 # If TEST_TMPDIR_EXPECTED is not specified, default value will be TEST_TMPDIR
@@ -1029,13 +1030,19 @@ def finalize_and_sanitize(src_params):
     ):
         dest_params["enable_blob_files"] = 0
         dest_params["allow_setting_blob_options_dynamically"] = 0
-        dest_params["atomic_flush"] = 0
         dest_params["allow_concurrent_memtable_write"] = 0
         dest_params["use_put_entity_one_in"] = 0
         dest_params["use_get_entity"] = 0
         dest_params["use_multi_get_entity"] = 0
         dest_params["enable_pipelined_write"] = 0
         dest_params["use_attribute_group"] = 0
+    if (
+        dest_params.get("enable_pipelined_write", 0)
+        or dest_params.get("unordered_write", 0)
+        or dest_params.get("disable_wal", 0) == 0
+        or dest_params.get("user_timestamp_size", 0)
+    ):
+        dest_params["ingest_wbwi_one_in"] = 0
     # Continuous verification fails with secondaries inside NonBatchedOpsStressTest
     if dest_params.get("test_secondary") == 1:
         dest_params["continuous_verification_interval"] = 0

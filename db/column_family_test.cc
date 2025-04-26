@@ -72,7 +72,6 @@ class ColumnFamilyTestBase : public testing::Test {
     env_->skip_fsync_ = true;
     dbname_ = test::PerThreadDBPath("column_family_test");
     db_options_.create_if_missing = true;
-    db_options_.fail_if_options_file_error = true;
     db_options_.env = env_;
   }
 
@@ -2176,7 +2175,7 @@ TEST_P(ColumnFamilyTest, FlushStaleColumnFamilies) {
   ASSERT_TRUE(has_cf2_sst);
 
   ASSERT_OK(Flush(0));
-  ASSERT_EQ(0, dbfull()->TEST_total_log_size());
+  ASSERT_EQ(0, dbfull()->TEST_wals_total_size());
   Close();
 }
 

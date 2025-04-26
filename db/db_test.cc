@@ -3407,7 +3407,7 @@ class ModelDB : public DB {
   }
 
   Status GetCurrentWalFile(
-      std::unique_ptr<LogFile>* /*current_log_file*/) override {
+      std::unique_ptr<LogFile>* /*current_wal_file*/) override {
     return Status::OK();
   }
 
@@ -3443,6 +3443,11 @@ class ModelDB : public DB {
 
   Status GetFullHistoryTsLow(ColumnFamilyHandle* /*cf*/,
                              std::string* /*ts_low*/) override {
+    return Status::OK();
+  }
+
+  Status GetNewestUserDefinedTimestamp(
+      ColumnFamilyHandle* /*cf*/, std::string* /*newest_timestamp*/) override {
     return Status::OK();
   }
 
@@ -5458,7 +5463,6 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel2) {
   options.max_bytes_for_level_multiplier = 8;
   options.max_background_compactions = 1;
   options.num_levels = 5;
-  options.compaction_verify_record_count = false;
   std::shared_ptr<mock::MockTableFactory> mtf(new mock::MockTableFactory);
   options.table_factory = mtf;
 
@@ -6414,7 +6418,7 @@ TEST_F(DBTest, TestLogCleanup) {
 
   for (int i = 0; i < 100000; ++i) {
     ASSERT_OK(Put(Key(i), "val"));
-    // only 2 memtables will be alive, so logs_to_free needs to always be below
+    // only 2 memtables will be alive, so wals_to_free needs to always be below
     // 2
     ASSERT_LT(dbfull()->TEST_LogsToFreeSize(), static_cast<size_t>(3));
   }

@@ -77,7 +77,9 @@ CompactionJob::ProcessKeyValueCompactionWithCompactionService(
       dbname_, db_id_, db_session_id_, GetCompactionId(sub_compact),
       thread_pri_, compaction->compaction_reason(),
       compaction->is_full_compaction(), compaction->is_manual_compaction(),
-      compaction->bottommost_level());
+      compaction->bottommost_level(), compaction->start_level(),
+      compaction->output_level());
+
   CompactionServiceScheduleResponse response =
       db_options_.compaction_service->Schedule(info, compaction_input_binary);
   switch (response.status) {
@@ -240,7 +242,8 @@ CompactionJob::ProcessKeyValueCompactionWithCompactionService(
     meta.marked_for_compaction = file.marked_for_compaction;
     meta.unique_id = file.unique_id;
     meta.temperature = file.file_temperature;
-
+    meta.tail_size =
+        FileMetaData::CalculateTailSize(file_size, file.table_properties);
     auto cfd = compaction->column_family_data();
     CompactionOutputs* compaction_outputs =
         sub_compact->Outputs(file.is_proximal_level_output);
